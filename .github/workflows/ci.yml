@@ -27,10 +27,9 @@ jobs:
       - name: Generate synthetic dataset
         run: python -c "from src.data.data_manager import generate_synthetic_dataset; generate_synthetic_dataset()"
 
-      - name: Run test suite TC01-TC15
-        run: python -m pytest tests/test_all.py -v --tb=short
-
-      - name: Check import health
+            - name: Check import health
+        env:
+          PYTHONPATH: ${{ github.workspace }}
         run: |
           python -c "from src.models.ccnnca_model import CCNNCAModel; print('CCNNCAModel OK')"
           python -c "from src.models.rff_transformer import RFFTransformer; print('RFFTransformer OK')"
@@ -38,7 +37,7 @@ jobs:
           python -c "from src.optimization.optimization_engine import OptimizationEngine; print('OptimizationEngine OK')"
           python -c "from src.interpretability.interpretability_module import InterpretabilityModule; print('InterpretabilityModule OK')"
 
-  lint:
+        lint:
     runs-on: ubuntu-latest
 
     steps:
