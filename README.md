@@ -270,13 +270,3 @@ The optimisation and training scripts assume the following parameter ranges (fro
 These bounds ensure that all recommended optimal conditions are physically feasible and within the space actually explored experimentally.[file:1]
 
 ---
-
-## 10. Citation
-
-If you use this codebase or CCNNCA formulation in academic work, please cite the underlying thesis and the original AIChE Journal paper on CCNN-based iCVD optimization referenced therein.[file:1]
-
----
-
-## 11. License
-
-Add your preferred open-source license here (e.g., MIT, Apache‑2.0) depending on your institutional and publication requirements.
