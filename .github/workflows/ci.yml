@@ -9,27 +9,17 @@ on:
 jobs:
   test:
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        python-version: ["3.10", "3.11"]
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Set up Python ${{ matrix.python-version }}
+      - name: Set up Python 3.10
         uses: actions/setup-python@v5
         with:
-          python-version: ${{ matrix.python-version }}
+          python-version: "3.10"
 
-      - name: Cache pip dependencies
-        uses: actions/cache@v4
-        with:
-          path: ~/.cache/pip
-          key: ${{ runner.os }}-pip-${{ hashFiles('requirements.txt') }}
-          restore-keys: ${{ runner.os }}-pip-
-
-            - name: Install dependencies
+      - name: Install dependencies
         run: |
           pip install -r requirements.txt
           pip install -e .
@@ -37,7 +27,7 @@ jobs:
       - name: Generate synthetic dataset
         run: python -c "from src.data.data_manager import generate_synthetic_dataset; generate_synthetic_dataset()"
 
-      - name: Run test suite (TC01–TC15)
+      - name: Run test suite TC01-TC15
         run: python -m pytest tests/test_all.py -v --tb=short
 
       - name: Check import health
@@ -50,12 +40,16 @@ jobs:
 
   lint:
     runs-on: ubuntu-latest
+
     steps:
       - uses: actions/checkout@v4
+
       - uses: actions/setup-python@v5
         with:
           python-version: "3.10"
+
       - name: Install flake8
         run: pip install flake8
+
       - name: Lint with flake8
         run: flake8 src/ scripts/ --max-line-length=100 --ignore=E203,W503,E221,E241,E226,E402,E401,E127,W292,W293,F841,E702
