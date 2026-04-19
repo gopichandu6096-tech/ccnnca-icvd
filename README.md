@@ -177,7 +177,7 @@ source .venv/bin/activate  # Windows: .venv\Scripts\activate
 pip install -r requirements.txt
 ```
 
-If you do not have the original 49-batch CSV, the code can generate a synthetic PPFDA-like dataset so the pipeline runs end-to-end for demonstration.[file:1]
+If you do not have the original 49-batch CSV, the code can generate a synthetic PPFDA-like dataset so the pipeline runs end-to-end for demonstration.
 
 ---
 
