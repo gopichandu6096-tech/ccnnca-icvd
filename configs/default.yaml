@@ -1,0 +1,65 @@
+model:
+  input_dim: 14
+  rff_dim: 256
+  output_dim: 3
+  lambda_reg: 0.01
+  attention_scale: 0.1
+
+training:
+  learning_rate: 0.001
+  weight_decay: 0.01
+  batch_size: 16
+  max_epochs: 300
+  patience: 20
+  lr_factor: 0.5
+  lr_patience: 15
+  min_lr: 1.0e-6
+  gradient_clip_norm: 1.0
+  cv_folds: 5
+  random_seed: 42
+
+optimization:
+  n_starts: 10
+  methods: [SLSQP, trust-constr, COBYLA, Nelder-Mead, L-BFGS-B]
+  weights: [0.3333, 0.3333, 0.3334]
+  max_iter: 1000
+  ftol: 1.0e-9
+
+data:
+  dataset_path: data/ppfda_dataset.csv
+  target_columns: [water_ca, heptane_ca, octane_ca]
+  feature_columns: [z1,z2,z3,z4,z5,z6,z7,z8,z9,z10,z11,z12,z13,z14]
+
+param_bounds:
+  z1:  [25.0,  50.0]
+  z2:  [25.0,  60.0]
+  z3:  [0.0,  100.0]
+  z4:  [0.0,    1.0]
+  z5:  [0.1,   15.0]
+  z6:  [0.1,    0.3]
+  z7:  [0.1,    0.5]
+  z8:  [15.0,  35.0]
+  z9:  [1800, 3600]
+  z10: [0.0,    1.0]
+  z11: [600,  1800]
+  z12: [0.0,   0.5]
+  z13: [300,   900]
+  z14: [0.0,   0.2]
+
+param_names:
+  z1:  "Substrate Temp (°C)"
+  z2:  "Reactor Wall Temp (°C)"
+  z3:  "Glass Heater Power (%)"
+  z4:  "Leak Flow Rate (sccm)"
+  z5:  "Initiator Flow Rate (sccm)"
+  z6:  "Monomer Flow Rate (sccm)"
+  z7:  "Pressure Difference (torr)"
+  z8:  "Filament Power (A·V)"
+  z9:  "Deposition Time I (s)"
+  z10: "Inert Gas Flow I (sccm)"
+  z11: "Deposition Time II (s)"
+  z12: "Inert Gas Flow II (sccm)"
+  z13: "Deposition Time III (s)"
+  z14: "Inert Gas Flow III (sccm)"
+
+output_dir: outputs/
