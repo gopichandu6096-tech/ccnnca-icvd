@@ -1,8 +1,7 @@
 # CCNNCA for iCVD Optimization
+Enhanced iCVD Reactor Optimization Through Convexified Attention Networks – Improving Liquid Repellency in Fluoropolymers.
 
-Enhanced iCVD Reactor Optimization Through Convexified Attention Networks – Improving Liquid Repellency in Fluoropolymers.[file:1]
-
-This repository implements the full CCNNCA framework described in the thesis for optimizing initiated chemical vapor deposition (iCVD) of polyperfluorodecyl acrylate (PPFDA) thin films under extreme data scarcity (49 batches, 14 process parameters, 3 contact angles).[file:1]
+This repository implements the full CCNNCA framework described in the thesis for optimizing initiated chemical vapor deposition (iCVD) of polyperfluorodecyl acrylate (PPFDA) thin films under extreme data scarcity (49 batches, 14 process parameters, 3 contact angles).
 
 ---
 
@@ -10,16 +9,16 @@ This repository implements the full CCNNCA framework described in the thesis for
 
 Optimizing iCVD processes is challenging because:
 
-- Only 49 experimental batches are available, with 14 coupled process parameters.[file:1]  
-- Relationships between parameters and liquid repellency (contact angles) are highly nonlinear.[file:1]  
-- Standard neural networks overfit and provide little interpretability.[file:1]  
-- Previous CCNN work achieved good accuracy (combined \(R^2 \approx 0.92\)) but treated all 14 features equally and mispredicted octane by 28.4° for the prior “optimal” condition.[file:1]
+- Only 49 experimental batches are available, with 14 coupled process parameters.
+- Relationships between parameters and liquid repellency (contact angles) are highly nonlinear.
+- Standard neural networks overfit and provide little interpretability.
+- Previous CCNN work achieved good accuracy (combined \(R^2 \approx 0.92\)) but treated all 14 features equally and mispredicted octane by 28.4° for the prior “optimal” condition.
 
 The goal is to:
 
 - Predict water, heptane, and octane contact angles simultaneously.  
 - Identify which iCVD parameters matter most.  
-- Find new process conditions that maximize liquid repellency within experimentally observed bounds.[file:1]
+- Find new process conditions that maximize liquid repellency within experimentally observed bounds.
 
 ---
 
@@ -29,18 +28,17 @@ The goal is to:
 
 The CCNNCA framework combines:
 
-- **Random Fourier Features (RFF)** to map 14 process parameters into an RKHS, approximating an RBF kernel.[file:1]  
-- **Convexified attention**: trace-based softmax attention over RFF feature sub-matrices, producing a convex combination \( \tilde{Q} \) used for prediction.[file:1]  
-- **Nuclear norm regularization** on the CCNN weight matrix \(A\) to control complexity and preserve convexity benefits.[file:1]
-
+- **Random Fourier Features (RFF)** to map 14 process parameters into an RKHS, approximating an RBF kernel.
+- **Convexified attention**: trace-based softmax attention over RFF feature sub-matrices, producing a convex combination \( \tilde{Q} \) used for prediction.
+- **Nuclear norm regularization** on the CCNN weight matrix \(A\) to control complexity and preserve convexity benefits.
 Outputs:
 
 - Simultaneous predictions for water, heptane, and octane contact angles.  
-- Attention weights that directly quantify the importance of each process parameter.[file:1]
+- Attention weights that directly quantify the importance of each process parameter.
 
 ### 2.2 Model Highlights
 
-From attention weights averaged over all 49 batches:[file:1]
+From attention weights averaged over all 49 batches:
 
 - **High-priority parameters**  
   - Initiator flow rate \(z_5\): weight 0.22  
@@ -52,20 +50,19 @@ From attention weights averaged over all 49 batches:[file:1]
   - Glass heater power \(z_3\): 0.08  
   - Pressure difference \(z_7\): 0.06  
   - Deposition time I \(z_9\): 0.06  
-  - Deposition time II \(z_{11}\): 0.05[file:1]
+  - Deposition time II \(z_{11}\): 0.05
 
 - **Low-priority parameters (can be fixed conveniently)**  
-  - Inert gas flows \(z_{10}, z_{12}, z_{14}\): weights 0.02–0.04[file:1]
+  - Inert gas flows \(z_{10}, z_{12}, z_{14}\): weights 0.02–0.04
 
 ---
 
 ## 3. Performance
 
-All evaluations use the same 49-batch PPFDA dataset as the prior AIChE Journal CCNN work for a controlled comparison.[file:1]
-
+All evaluations use the same 49-batch PPFDA dataset as the prior AIChE Journal CCNN work for a controlled comparison.
 ### 3.1 5‑Fold Cross‑Validation
 
-Average metrics across folds:[file:1]
+Average metrics across folds:
 
 | Metric                    | CNN‑4 Baseline | Standard CCNN | CCNNCA (this work) |
 |---------------------------|---------------:|--------------:|--------------------:|
@@ -78,8 +75,7 @@ Average metrics across folds:[file:1]
 | Combined \(R^2\)          | 0.89           | 0.92          | 0.95                |
 | Average MAE (°)           | 19.55          | 21.07         | 14.22               |
 
-The largest gain is for octane: MSE reduced by 78.1% compared to standard CCNN.[file:1]
-
+The largest gain is for octane: MSE reduced by 78.1% compared to standard CCNN.
 ### 3.2 LOOCV
 
 Leave-One-Out Cross-Validation (49 models, each tested on 1 held-out batch):  
@@ -88,25 +84,25 @@ Leave-One-Out Cross-Validation (49 models, each tested on 1 held-out batch):
 
 ### 3.3 Critical Octane Test
 
-For the previously reported “optimal” conditions, CCNNCA predicts octane contact angle within 0.4° of the measured value, compared to a 28.4° error for the prior CCNN.[file:1]
+For the previously reported “optimal” conditions, CCNNCA predicts octane contact angle within 0.4° of the measured value, compared to a 28.4° error for the prior CCNN.
 
 ---
 
 ## 4. Optimization Results
 
-Using the trained CCNNCA as a surrogate model, the repository includes a 5‑method multi-start optimisation framework:[file:1]
+Using the trained CCNNCA as a surrogate model, the repository includes a 5‑method multi-start optimisation framework:
 
 - SLSQP  
 - Trust-Region  
 - COBYLA  
 - Nelder-Mead  
-- L-BFGS-B[file:1]
+- L-BFGS-B
 
-Each method is run with 10 random starts under box constraints equal to the experimental parameter bounds.[file:1]
+Each method is run with 10 random starts under box constraints equal to the experimental parameter bounds.
 
 ### 4.1 Optimal Conditions (Representative CCNNCA–SLSQP Solution)
 
-Within experimental bounds:[file:1]
+Within experimental bounds:
 
 | Param | Description                  | Unit   | Min   | Max   | Optimal |
 |-------|------------------------------|--------|-------|-------|--------:|
@@ -125,7 +121,7 @@ Within experimental bounds:[file:1]
 | z13   | Deposition time III          | s      | 300   | 900   | 600     |
 | z14   | Inert gas flow III           | sccm   | 0.0   | 0.2   | 0.05    |
 
-Three independent methods (SLSQP, Trust-Region, COBYLA) converge to essentially identical conditions, which is strong evidence of a well-defined global optimum under the CCNNCA model.[file:1]
+Three independent methods (SLSQP, Trust-Region, COBYLA) converge to essentially identical conditions, which is strong evidence of a well-defined global optimum under the CCNNCA model.
 
 ---
 
@@ -162,7 +158,7 @@ Three independent methods (SLSQP, Trust-Region, COBYLA) converge to essentially 
     └── test_all.py           # TC01–TC15 implementation
 ```
 
-The `tests/test_all.py` file encodes all 15 system-level test cases from the thesis (TC01–TC15) covering prediction quality, optimisation convergence, attention interpretability, leakage prevention, and checkpoint determinism.[file:1]
+The `tests/test_all.py` file encodes all 15 system-level test cases from the thesis (TC01–TC15) covering prediction quality, optimisation convergence, attention interpretability, leakage prevention, and checkpoint determinism.
 
 ---
 
@@ -197,9 +193,9 @@ This will:
 
 - Load the 49-batch dataset (or generate a synthetic one if missing).  
 - Perform 5-fold stratified CV (composite multi-output stratification).  
-- Train CCNNCA with AdamW, ReduceLROnPlateau, early stopping, nuclear norm regularisation.[file:1]  
+- Train CCNNCA with AdamW, ReduceLROnPlateau, early stopping, nuclear norm regularisation. 
 - Save the best checkpoint to `outputs/best_model.pt`.  
-- Write fold-wise metrics to `outputs/cv_results.json`.[file:1]
+- Write fold-wise metrics to `outputs/cv_results.json`.
 
 To additionally run LOOCV after k-fold CV:
 
@@ -221,7 +217,7 @@ This:
 - Loads the trained CCNNCA model and fitted MinMaxScaler.  
 - Runs 5 optimisation methods × multi-start with the experimental bounds.  
 - Prints per-method optimal conditions and predicted contact angles.  
-- Summarises method consistency and convergence.[file:1]
+- Summarises method consistency and convergence.
 
 ### 7.3 Interpretability / XAI
 
@@ -253,20 +249,18 @@ These tests correspond directly to TC01–TC15 in the thesis, validating:
 - Correct output shapes and nuclear norm regularisation.  
 - Multi-method optimisation behaviour.  
 - Attention weight normalisation and ranking.  
-- Checkpoint determinism and MinMaxScaler leakage prevention.[file:1]
+- Checkpoint determinism and MinMaxScaler leakage prevention.
 
 ---
 
 ## 9. Data and Bounds
 
-The optimisation and training scripts assume the following parameter ranges (from the experimental dataset):[file:1]
+The optimisation and training scripts assume the following parameter ranges (from the experimental dataset):
 
 - Substrate temperature: 25–50 °C  
 - Reactor wall temperature: 25–60 °C  
 - Initiator flow rate: 0.1–15 sccm  
 - Monomer flow rate: 0.1–0.3 sccm  
-- All remaining parameters constrained to their observed ranges as specified in `configs/default.yaml`.[file:1]
+- All remaining parameters constrained to their observed ranges as specified in `configs/default.yaml`.
 
-These bounds ensure that all recommended optimal conditions are physically feasible and within the space actually explored experimentally.[file:1]
-
----
+These bounds ensure that all recommended optimal conditions are physically feasible and within the space actually explored experimentally.
