@@ -1,0 +1,59 @@
+name: CCNNCA CI Pipeline
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.10", "3.11"]
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Cache pip dependencies
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-${{ hashFiles('requirements.txt') }}
+          restore-keys: ${{ runner.os }}-pip-
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Generate synthetic dataset
+        run: python -c "from src.data.data_manager import generate_synthetic_dataset; generate_synthetic_dataset()"
+
+      - name: Run test suite (TC01–TC15)
+        run: python -m pytest tests/test_all.py -v --tb=short
+
+      - name: Check import health
+        run: |
+          python -c "from src.models.ccnnca_model import CCNNCAModel; print('CCNNCAModel OK')"
+          python -c "from src.models.rff_transformer import RFFTransformer; print('RFFTransformer OK')"
+          python -c "from src.training.training_engine import TrainingEngine; print('TrainingEngine OK')"
+          python -c "from src.optimization.optimization_engine import OptimizationEngine; print('OptimizationEngine OK')"
+          python -c "from src.interpretability.interpretability_module import InterpretabilityModule; print('InterpretabilityModule OK')"
+
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+      - name: Install flake8
+        run: pip install flake8
+      - name: Lint with flake8
+        run: flake8 src/ scripts/ --max-line-length=100 --ignore=E203,W503
