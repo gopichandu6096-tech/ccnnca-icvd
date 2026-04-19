@@ -51,7 +51,7 @@ class CCNNCAModel(nn.Module):
     """
     Convexified CNN with Convexified Attention Mechanism.
     Q  = RFF(Z)                           shape: [B, 2*rff_dim]  e.g. [B, 512]
-    Q̃  = α₀·Q_cos ‖ α₁·Q_sin             shape: [B, 512]   ← FIXED: stays 512-wide
+    Q̃  = α₀·Q_cos ‖ α₁·Q_sin             shape: [B, 512]
     AW = softmax(Q̃ @ A / √rff_dim)        shape: [B, 3]
     ŷ  = Q̃ @ A                            shape: [B, 3]
     """
@@ -72,8 +72,7 @@ class CCNNCAModel(nn.Module):
     def convexified_attention(self, Q):
         """
         Split Q into cos and sin halves, compute trace-based softmax
-        coefficients, and return Q̃ = α₀·[cos‖0] + α₁·[0‖sin]
-        concatenated back to full width [B, 512].
+        coefficients, and return Q̃ = α₀·[cos] ‖ α₁·[sin]  (still width 512).
         """
         # Split into two halves: each [B, 256]
         q_cos, q_sin = torch.split(Q, self.rff_dim, dim=-1)
@@ -91,7 +90,7 @@ class CCNNCAModel(nn.Module):
 
         scores = torch.stack([trace_score(q_cos, A_cos),
                                trace_score(q_sin, A_sin)])   # [2]
-        alpha  = torch.softmax(scores, dim=0)                # [2] — convex coefficients
+        alpha  = torch.softmax(scores, dim=0)                # [2]
 
         # Weighted combination — output stays [B, 512]
         Q_tilde = torch.cat([alpha[0] * q_cos,
@@ -149,7 +148,7 @@ def generate_synthetic_dataset(path="data/ppfda_dataset.csv", n=49, seed=42):
     h_ca = np.clip(base * 0.75 + rng.normal(0, 4, n), 60, 140)
     o_ca = np.clip(base * 0.70 + rng.normal(0, 4, n), 55, 135)
     df   = pd.DataFrame(X, columns=[f"z{i}" for i in range(1, 15)])
-    df["water_ca"] = w_ca
+    df["water_ca"]   = w_ca
     df["heptane_ca"] = h_ca
     df["octane_ca"]  = o_ca
     df.to_csv(path, index=False)
@@ -161,7 +160,7 @@ def generate_synthetic_dataset(path="data/ppfda_dataset.csv", n=49, seed=42):
 def get_trained_model():
     ckpt_path = "outputs/best_model.pt"
 
-    # ── Try loading existing checkpoint ──
+    # Try loading existing checkpoint
     if os.path.exists(ckpt_path):
         try:
             model, scaler = CCNNCAModel.load(ckpt_path)
@@ -170,7 +169,7 @@ def get_trained_model():
         except Exception:
             os.remove(ckpt_path)   # corrupt — retrain
 
-    # ── Generate synthetic dataset if needed ──
+    # Generate synthetic dataset if needed
     ds_path = "data/ppfda_dataset.csv"
     if not os.path.exists(ds_path):
         generate_synthetic_dataset(ds_path)
@@ -261,7 +260,7 @@ st.success("✅ Model ready!")
 st.sidebar.header("⚙️ Set Process Parameters")
 st.sidebar.caption("Adjust sliders to set iCVD process conditions")
 
-# Load-optimal button (must come BEFORE reading slider values so rerun picks them up)
+# Load-optimal button before sliders
 if st.sidebar.button("🎯 Load Optimal Conditions (SLSQP)"):
     for i, v in enumerate(OPTIMAL_PARAMS):
         clamped = float(min(max(v, BOUNDS[i][0]), BOUNDS[i][1]))
@@ -287,11 +286,10 @@ model.eval()
 with torch.no_grad():
     preds, AW, _, alpha = model(Z_tensor)
 
-ca      = preds[0].numpy()           # [3]  water, heptane, octane
-alpha_np = alpha.cpu().numpy()       # [2]  cos/sin weights
+ca       = preds[0].numpy()           # [3]  water, heptane, octane
+alpha_np = alpha.cpu().numpy()        # [2]  cos/sin weights
 
-# Map 2 attention coefficients → 14 param importance
-# Use report weights for the canonical bar chart (model trained on synthetic data)
+# Use report weights for canonical bar chart
 rep_w = np.array(REPORT_WEIGHTS, dtype=np.float32)
 
 # ─── TABS ──────────────────────────────────────────────────────────────── #
@@ -310,22 +308,28 @@ with tab1:
     c1, c2, c3 = st.columns(3)
     with c1:
         delta_w = ca[0] - 130.0
-        st.metric("💧 Water CA",
-                  f"{ca[0]:.1f}°",
-                  delta=f"{delta_w:+.1f}° vs 130° target",
-                  delta_color="normal" if delta_w >= 0 else "inverse")
+        st.metric(
+            "💧 Water CA",
+            f"{ca[0]:.1f}°",
+            delta=f"{delta_w:+.1f}° vs 130° target",
+            delta_color="normal" if delta_w >= 0 else "inverse",
+        )
     with c2:
         delta_h = ca[1] - 90.0
-        st.metric("🟡 Heptane CA",
-                  f"{ca[1]:.1f}°",
-                  delta=f"{delta_h:+.1f}° vs 90° target",
-                  delta_color="normal" if delta_h >= 0 else "inverse")
+        st.metric(
+            "🟡 Heptane CA",
+            f"{ca[1]:.1f}°",
+            delta=f"{delta_h:+.1f}° vs 90° target",
+            delta_color="normal" if delta_h >= 0 else "inverse",
+        )
     with c3:
         delta_o = ca[2] - 85.0
-        st.metric("🟠 Octane CA",
-                  f"{ca[2]:.1f}°",
-                  delta=f"{delta_o:+.1f}° vs 85° target",
-                  delta_color="normal" if delta_o >= 0 else "inverse")
+        st.metric(
+            "🟠 Octane CA",
+            f"{ca[2]:.1f}°",
+            delta=f"{delta_o:+.1f}° vs 85° target",
+            delta_color="normal" if delta_o >= 0 else "inverse",
+        )
 
     # Gauge-style horizontal bars
     st.markdown("---")
@@ -335,7 +339,8 @@ with tab1:
         ("Heptane", ca[1],  90, "🟡"),
         ("Octane",  ca[2],  85, "🟠"),
     ]:
-        pct = min(val / 170.0, 1.0)
+        # map CA (capped at 170) → 0–100 integer for Streamlit progress
+        pct = int(min(val / 170.0, 1.0) * 100)
         st.markdown(f"{emoji} **{label}** — {val:.1f}° &nbsp;&nbsp; *(target: {target}°)*")
         st.progress(pct)
 
@@ -377,15 +382,19 @@ with tab2:
     fig.patch.set_facecolor("#0E1117")
     ax.set_facecolor("#0E1117")
 
-    bars = ax.bar(range(14), sorted_imp, color=colors,
-                   edgecolor="#2D2D2D", linewidth=0.8)
+    bars = ax.bar(
+        range(14), sorted_imp, color=colors,
+        edgecolor="#2D2D2D", linewidth=0.8
+    )
     ax.set_xticks(range(14))
-    ax.set_xticklabels(sorted_names, rotation=42, ha="right",
-                        fontsize=8.5, color="white")
+    ax.set_xticklabels(
+        sorted_names, rotation=42, ha="right",
+        fontsize=8.5, color="white"
+    )
     ax.set_ylabel("Attention Weight (αᵢ)", fontsize=11, color="white")
     ax.set_title(
         "CCNNCA Feature Importance — iCVD Process Parameters",
-        fontsize=13, fontweight="bold", color="white", pad=12
+        fontsize=13, fontweight="bold", color="white", pad=12,
     )
     ax.tick_params(colors="white")
     for spine in ax.spines.values():
@@ -395,19 +404,23 @@ with tab2:
     ax.set_ylim(0, sorted_imp.max() * 1.22)
 
     for bar, w in zip(bars, sorted_imp):
-        ax.text(bar.get_x() + bar.get_width() / 2,
-                bar.get_height() + 0.003,
-                f"{w:.3f}", ha="center", va="bottom",
-                fontsize=8, fontweight="bold", color="white")
+        ax.text(
+            bar.get_x() + bar.get_width() / 2,
+            bar.get_height() + 0.003,
+            f"{w:.3f}", ha="center", va="bottom",
+            fontsize=8, fontweight="bold", color="white",
+        )
 
     legend_patches = [
         mpatches.Patch(color="#2196F3", label="🔴 High priority  (> 0.10)"),
         mpatches.Patch(color="#4CAF50", label="🟡 Medium priority (0.05 – 0.10)"),
         mpatches.Patch(color="#9E9E9E", label="⚪ Low priority   (< 0.05)"),
     ]
-    ax.legend(handles=legend_patches, loc="upper right",
-              fontsize=9, facecolor="#1A1A2E",
-              labelcolor="white", framealpha=0.8)
+    ax.legend(
+        handles=legend_patches, loc="upper right",
+        fontsize=9, facecolor="#1A1A2E",
+        labelcolor="white", framealpha=0.8,
+    )
     plt.tight_layout()
     st.pyplot(fig)
     plt.close(fig)
@@ -446,7 +459,7 @@ with tab3:
     opt_rows = []
     for i, (name, val, (lo, hi)) in enumerate(
             zip(PARAM_NAMES, OPTIMAL_PARAMS, BOUNDS)):
-        pct = (val - lo) / (hi - lo) * 100
+        pct = (val - lo) / (hi - lo) * 100.0
         opt_rows.append({
             "Parameter":        name,
             "Optimal Value":    f"{val:.4f}",
