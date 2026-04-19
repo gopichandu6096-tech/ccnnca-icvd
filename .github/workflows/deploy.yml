@@ -1,0 +1,84 @@
+name: CCNNCA Deploy Pipeline
+
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+  train-and-save:
+    runs-on: ubuntu-latest
+    needs: []
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.10
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+
+      - name: Install dependencies
+        run: |
+          pip install -r requirements.txt
+          pip install -e .
+
+      - name: Set PYTHONPATH
+        run: echo "PYTHONPATH=$GITHUB_WORKSPACE" >> $GITHUB_ENV
+
+      - name: Generate synthetic dataset
+        run: python -c "from src.data.data_manager import generate_synthetic_dataset; generate_synthetic_dataset()"
+
+      - name: Train CCNNCA model
+        run: python scripts/train.py --config configs/default.yaml
+
+      - name: Run optimization
+        run: python scripts/optimize.py --checkpoint outputs/best_model.pt
+
+      - name: Generate feature importance plot
+        run: python scripts/explain.py --checkpoint outputs/best_model.pt
+
+      - name: Upload trained model artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ccnnca-trained-model
+          path: |
+            outputs/best_model.pt
+            outputs/cv_results.json
+            outputs/attention_weights.png
+          retention-days: 30
+
+  docker-build:
+    runs-on: ubuntu-latest
+    needs: train-and-save
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Build Docker image
+        run: docker build -t ccnnca-icvd:latest .
+
+      - name: Test Docker image
+        run: |
+          docker run --rm ccnnca-icvd:latest python -c "
+          from src.models.ccnnca_model import CCNNCAModel
+          m = CCNNCAModel()
+          print('Docker image OK - model loads successfully')
+          "
+
+  notify:
+    runs-on: ubuntu-latest
+    needs: [train-and-save, docker-build]
+
+    steps:
+      - name: Deployment summary
+        run: |
+          echo "============================================"
+          echo "  CCNNCA iCVD DEPLOYMENT COMPLETE"
+          echo "============================================"
+          echo "  Branch   : main"
+          echo "  Status   : All jobs passed"
+          echo "  Artifact : ccnnca-trained-model (30 days)"
+          echo "  Docker   : ccnnca-icvd:latest built OK"
+          echo "============================================"
